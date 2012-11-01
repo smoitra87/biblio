@@ -1,0 +1,71 @@
+\documentclass[a4]{article}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{color}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\begin{document}
+
+\title{Review Notes on DEE}
+
+\author{Subhodeep Moitra \\ {\tt subhodee@andrew.cmu.edu}}
+
+\maketitle
+
+\begin{abstract}
+In this review, I will talk about the Dead End Elimination(DEE) algorithm and some of its variants, especially from the point of view of application to computational structural biology problems.  
+\end{abstract}
+
+\section{Introduction}
+
+
+\section{DEE for Multistate protein design}
+A subproblem in the :q
+
+\subsection{Prior}
+
+
+\subsection{Actual}
+
+
+\section{Conclusion}
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\pagebreak
+\newpage
+
+\appendix
+\section{Multistate DEE}
+DEE solves a discrete combinatorial optimization problem. The main contribution of the DEE algorithm is that it reduces the search space by provably pruning out some candidates. However it has to make sure that whne pruning out candidates it still preserves the GMEC. For it to be able to do this it needs to make some assumptions about the form of the energy function. 
+
+For single state protein design the optimization problem is  : 
+\[
+S^* = \argmin_S E^*(S) = \argmin_S \left( \min_r E(r,S) \right)
+\]
+
+For multistate it is :
+\[
+S^* = \argmin_S E^*_1(S) + E^*_2(S) = \argmin_S\left( \min_r E_1(r,S) + \min_r E_2(r,S)\right)
+\]
+
+Multistate protein design tries to find the sequence that is stable under a number of different states. In their method yhey use the type-dependent DEE for pruning out the space of candidate solutions, while preserving the GMEC. Multistate optimization falls into two categories. First, wherein you are trying to design a structure that is stable in multiple state and second wherein you are trying to design for specificity which means that you are trying to design a sequence that is stable in one state but unstable in other states. The canonical way to represent the multistate optimization for specificity is :
+\[
+\begin{split}
+Score(S) &= \alpha E_{pos}^*(S) - \beta E_{neg}^*(S) \quad \text{where } \alpha,\beta \geq 0 \\
+S^* & = \argmin_S \left[\alpha \min_{\tau(r)=S} E_{pos}(r_{pos}) - \min_{\tau(r)=S} \beta E_{neg}(r_{neg})) \right]
+\end{split} 
+\]
+
+Note that $E_{pos}^*(S)$ denote the minimal energy conformation for a particular sequence. I am confused isn't finding this exponentially hard as well ? Because we proved previously that the side chain optimization problem is NP hard. The way seqeunce design works with DEE is that the sequence space is expanded to include the rotameric space as well. So instead of doing DEE on a $20^N$ space you perform DEE over a $(20*n_{rot})^N$ space. Whatever the optimal rotamer assignments are, you can calculate the optimal sequence by just mapping the rotamer to the appropriate sequence. 
+
+
+
+
+
+
+\section{Backbone Flexibility DEE}
+\end{document}
