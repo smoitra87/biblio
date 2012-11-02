@@ -20,11 +20,21 @@ In this review, I will talk about the Dead End Elimination(DEE) algorithm and so
 
 \section{Introduction}
 
+\section{Singles Criteria}
+
+
+
+\section{Goldstein Criteria}
+
+
+\section{Split DEE}
 
 \section{DEE for Multistate protein design}
-A subproblem in the :q
+A subproblem in the 
 
-\subsection{Prior}
+\section{DEE for Flexible backbone}
+
+\section{Faster DEE using Gordon Method}
 
 
 \subsection{Actual}
@@ -39,6 +49,28 @@ A subproblem in the :q
 \newpage
 
 \appendix
+
+\section{Single State DEE}
+
+Eliminate $r_i^k$, rotamer k at position i if the following condition holds
+\[
+E_i(r_i^k) + \sum_j \min_s E_{ij}(r_i^k,r_j^s) > E_i(r_i^l) + \sum_j \max_s E_{ij}(r_i^l,r_j^s)
+\]
+
+
+\section{Goldstein criteria}
+This is a stronger condition than the single state DEE criteria.
+Eliminate $r_i^k$, rotamer k at position i if the following condition holds
+\[
+E_i(r_i^k) - E_i(r_i^l) + \sum_j \min_s \left(E_{ij}(r_i^k,r_j^s) - E_{ij}(r_i^l,r_j^s) \right)> 0  
+\]
+
+Basically, this condition says that the energy function can be lowered by changing $r_i^k$ to $r_i^l$ while keeping all the non $r_i$ rotamers fixed. 
+
+
+\section{Split DEE}
+What happens when you cannot prune some rotamers away by using these criteria. Then you cluster rotamers into groups and then try to prune rotamers in these groups. This however causes a large increase in computation time, since computation is exponential in the number of subgroups. Why ?
+
 \section{Multistate DEE}
 DEE solves a discrete combinatorial optimization problem. The main contribution of the DEE algorithm is that it reduces the search space by provably pruning out some candidates. However it has to make sure that whne pruning out candidates it still preserves the GMEC. For it to be able to do this it needs to make some assumptions about the form of the energy function. 
 
@@ -61,9 +93,13 @@ S^* & = \argmin_S \left[\alpha \min_{\tau(r)=S} E_{pos}(r_{pos}) - \min_{\tau(r)
 \]
 
 Note that $E_{pos}^*(S)$ denote the minimal energy conformation for a particular sequence. I am confused isn't finding this exponentially hard as well ? Because we proved previously that the side chain optimization problem is NP hard. The way seqeunce design works with DEE is that the sequence space is expanded to include the rotameric space as well. So instead of doing DEE on a $20^N$ space you perform DEE over a $(20*n_{rot})^N$ space. Whatever the optimal rotamer assignments are, you can calculate the optimal sequence by just mapping the rotamer to the appropriate sequence. 
-
-
-
+\\
+\\
+One strategy to do multistate design could be to combine the rotameric spaces of the two states and then optimize that energy function. Such as  : 
+\[
+\tilde{E_{ij}}(r_i,r_j) = \alpha E_{pos_{ij}}(r_i,r_j) - \beta E_{neg_{ij}}(r_i,r_j)
+\]
+However, this scheme assumes that the both states will have the same rotameric states. However, we want to do the minimization over the sequence space while letting the rotamers be different in each state. 
 
 
 
