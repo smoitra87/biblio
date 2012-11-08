@@ -15,42 +15,145 @@
 \maketitle
 
 \begin{abstract}
-In this review, I will talk about the Dead End Elimination(DEE) algorithm and some of its variants, especially from the point of view of application to computational structural biology problems.  
+To be added soon
 \end{abstract}
 
 \section{Introduction}
+Some problems in computational structural biology such as sequence design or side chain rotamer optimization can be posed as discrete combinatorial optimization problems. These problems are more formally defined in the following section. Meanwhile, we will use the side chain optimization problem as a running example since the sequence design problem is conceptually the same.  In these problems we try to minimize an energy function parametrized by the discrete variable. The global minumum of the energy function is known as the GMEC (Global Minimum Energy Conformation). Finding the GMEC is NP-hard as shown by~\ref{Pierce}. This is a sobering result and efforts to find a polynomial time solution for these protein design problems is likely to be fruitless. Nevertheless, the nature of the rotamers or the sequences is such that some of these states are clearly wrong and can be safely ignored while searching for the GMEC. For e.g.(1) a rotameric position which causes clashes with the backbone can be safely ignored from consideration (2) a polar amino acid can be safely ignored from the hydrophobic core. This leads us to the Dead-End Elimination algorithm (DEE). 
+\\
+\\
+The DEE algorithm has been used as a search space reduction technique for problems in computational structural biology. These problems involve an exponential number of possible solution candidates. The DEE algorithm is able to successfully prune the search space while retaining the GMEC. The basic idea  is to be able to find bad combinations of variables known as dead ends. This is in direct contrast to the Dynamic programming style of finding a solution, which involves keeping the best and most promising candidates. 
+\\
+\\
+Every DEE algorithm essentially has the following components :
+\begin{enumerate}
+\item A well defined set of discrete independent variables
+\item A \emph{precomputed} numerical value(considered the energy) associated with each element in the set of variables. You can even define these energies for their pairs, triples, etc
+\item A criterion for determining when an element is a dead end
+\item An objective function considered to be the energy function to be minimized
+\end{enumerate}
 
-\section{Singles Criteria}
 
+
+The DEE algorithm has undergone a lot of change since it was first published~\ref{Desmet92} in 1992. Newer criteria for the pruning the search space emerged. Newer criteria are measured by their efficiency i.e. how quickly you can check criterion and the eliminating power i.e. how much of the space they can prune. Stronger criteria were added that were able to prune out more of the search space. A number of novel criteria and DEE models emerged that are able to do some non-traditional DEE tasks such as Backrub modeling, flexible backbone, continuous rotamers etc. The DEE algorithm is no magic bullet. Even though it is typically able to prune the search space of protein problems effectively, the exhaustive search to be performed afterwards can still be quite computationally demanding.
+
+\subsection{Side chain placement problem}
+The side chain placement problem(SCP) refers to finding the conformation of the side chains of the protein assuming a fixed backbone. The entire continuous space of the side chains is not modelled. They are usually discretized into a set of discrete rotamers~\ref{Dunbrack}. Every conformation has an associated energy. The energy function is decomposable into energy contributions from each of the individual amino acids or pairs of amino acids. This is reasonable since atoms in proteins are assumed to interact only by two body potentials. The energy of particular conformation represented by a vector $r$ is represented as : 
+\[
+E(r) = \sum_{i=1}^{N}E_i(r_i) + \sum_{i<j}E_{ij}(r_i,r_j)
+\]
+
+where $E(r)$ corresponds to the overall energy of a rotamer conformation space represented by the vector $r$. The rotamer for amino acid $i$ is represented by $r_i$. Also, $r_i^A$ corresponds to the rotamer at position $i$ taking state A. The rotamers for a particular amino acid are restricted to a discrete set $r_i \in \{1,2,\cdots,R_i\}$. $E_i(r_i)$ corresponds to the precomputed energies for rotamer for amino acid $i$ and the backbone. $E_{ij}(r_i,r_j)$ corresponds to the precomputed energies between the pair of rotamers for amino acid $i$ and $j$ respectively. 
+Note that, $E_{kk}(r_k^A,r_k^A)$ that the pair energy between a rotamer and itself is taken to be zero. This simplifies description of the pairs criterion to be presented below. 
+\\
+\\
+In principle one can make energy function arbitrarily complex taking contributions from tuples of amino acids. However the fact the function decomposes into atomic parts is what makes it possible to apply pruning techniques such as DEE.  The side chain placement problem is a discrete combinatorial optimization problem which involves finding the conformation $r^*$ which minimizes the function $E(r)$. This conformation $r^*$ is known as the global minimum energy conformation or the GMEC.
+\[
+\begin{split}
+r^* &= \argmin_{r_i \in \{1,2,\cdots,R_i\}} E(r) \\
+&= \argmin_{r_i \in \{1,2,\cdots,R_i\}} \sum_{i=1}^{N}E_i(r_i) + \sum_{i<j}E_{ij}(r_i,r_j)
+\end{split}
+\]
+This problem has been recast into a number of different frameworks such as Integer programming, graph based methods, etc. Nevertheless, this problem has been shown to be NP-Hard~\ref{Pierce}. There are a number of methods that try to solve the problem with no guarantees for optimality using techniques such as simulated annealing, monte carlo optimization, etc.  The state of the art is the SCWRL4~\ref{SCWRL4} algorithm. SCWRL4's goal is performance rather than algorithmic novelty. So they use a number of different existing successful techniques in order to find a good placement. 
+\\
+\\
+The DEE algorithm can be used in those algorithms that try to exactly find the GMEC. Basically, any algorithm that attempts to find the GMEC has to resort to exhaustive search unless there is some structure in the energy function. But most SCP problems do not have this kind of structure and can have exponential worst case behavior. DEE is used to prune the search space. The original DEE algorithm~\ref{Desmet92} used the singles and the doubles elimination criteria for pruning single and pairwise rotamer pairs. 
+
+
+\subsection{Protein Design problem}
+The protein design problem(PD) refers to finding an amino acid sequence that is compatible with a desired protein structure. The compatibility with the desired structure is measured through an energy function. The form of the energy function is much like the side chain placement problem. The optimization problem becomes a discrete combinatorial optimization problem. The optimization over the sequence space hides an inner optimization of the rotameric space
+\[
+\begin{split}
+S^* &= \argmin_{S} E^*(S) \\
+	&= \argmin_{S} \left( \min_{r} E(r) \right) \quad \text{s.t. $\tau(r)=S$} \\
+	&= \argmin_{S} \left( \min_{r_i \in \{1,2,\cdots,R_i\}} \sum_{i=1}^{N}E_i(r_i) + \sum_{i<j}E_{ij}(r_i,r_j) \right) \quad \text{s.t. $\tau(r)=S$}
+\end{split}
+\]
+
+Here, $E^*(S)$ corresponds to the minimum energy rotameric conformation given a particular sequence. $\tau(r)$ is a mapping from a rotamer space to a sequence. This has an implicit minimization which is the same as finding the GMEC for the SCP problem. The backbone is held fixed regardless of the amino acid sequence or the position of the rotamers. This is  ofcourse not a realistic assumption, but it is done so by design. The goal is to have a protein sequence which assumes the backbone shape, not just to find a stable structure. The PD problem can in fact be reformulated into the SCP problem by extending the rotameric space. The optimal sequence is then trivially retrieved by mapping the rotamers to their corresponding amino acids.
+\[
+\begin{split}
+S^* &= \tau\left( \min_{r_i \in \{1,2,\cdots,R_{all}\}} \sum_{i=1}^{N}E_i(r_i) + \sum_{i<j}E_{ij}(r_i,r_j) \right)
+\end{split}
+\]
+where $R_{all}$ corresponds to all the rotamers of all the amino acids. In practice, we do not need to search over all positions in the protein. We are most often interested in redesigning an active site or a binding site. We also don't need to search over the space of all the amino acids at a particular position. Knowledge about the hydrophobicity and/or evolutionary constraints can help restrict the search space apriori. 
+
+
+The DEE algorithm can be used here again to significantly reduce the search space. A short zinc finger protein was redesigned using an early version of the DEE algorithm~\ref{Dahiyat1997}. 
+
+
+\section{Original Criteria}
 
 
 \section{Goldstein Criteria}
 
-
 \section{Split DEE}
+
+\section{Gordon Criteria}
+
+\section{DEE for Protein Design- Mayo}
 
 \section{DEE for Multistate protein design}
 A subproblem in the 
 
 \section{DEE for Flexible backbone}
 
-\section{Faster DEE using Gordon Method}
+\section{minDEE}
+
+\section{Restricted DEE}
+
+\section{iminDEE - Continuous rotamers}
+
+\section{Backrub}
+
+\section{BroMAP}
+
+\section{DEEPer}
+
+\section{Implementation}
+
+\subsection{Space requirements}
+The space needed to store the energy values can be a limiting factor for large sequences. Let $N$ be the number of amino acids in the protein and $R$ be the number of rotamers per amino acid. Then we need $O(NR)$ space for unit energy values and $O(N^2R^2)$ for the pairwise energy values. 
+
+\section{Discussion}
+
+Problems with DEE :
+\begin{itemize}
+\item Is it worth trying to find the GMEC given that energy functions are not that accurate in the first place?
+\item Is DEE a dual of Dynamic programming ? 
+\item How are the energies pre-computed ? What is the conmplexity of doing this ?
+\item How do the space requirements compare with the time requirements ?
+\item How does the algo scale with size of the system ? Are some large systems impossible to model using this method ? 
+\item How does DEE compare with other non-DEE techniques such as Monte Carlo, etc..
+\item When calculating $E(r)$ the energy of the whole protein are all pairs of energies evaluated or is some sort of distance constraint enforced ?
+\end{itemize}
 
 
-\subsection{Actual}
 
-
-\section{Conclusion}
-
-\bibliographystyle{plain}
-\bibliography{refs}
 
 \pagebreak
 \newpage
 
 \appendix
 
+\section{Datasets used}
+
+
+\begin{center}
+    \begin{tabular}{ | l | l | p{8cm} |}
+    \hline
+    Paper & Dataset & Summary \\ \hline
+    Monday & 11C & A clear day with lots of sunshine.  
+    However, the strong breeze will bring down the temperatures. \\ \hline
+    Tuesday & 9C & Cloudy with rain, across many northern regions. Clear spells
+    across most of Scotland and Northern Ireland,
+    but rain reaching the far northwest. \\ 
+    \hline
+    \end{tabular}
+\end{center}
+
 \section{Single State DEE}
+The First DEE algorithm~\cite{Desmet1992} was used to prune out the search space by using the following criterion. 
 
 Eliminate $r_i^k$, rotamer k at position i if the following condition holds
 \[
@@ -104,4 +207,9 @@ However, this scheme assumes that the both states will have the same rotameric s
 
 
 \section{Backbone Flexibility DEE}
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+
 \end{document}
