@@ -81,9 +81,79 @@ where $R_{all}$ corresponds to all the rotamers of all the amino acids. In pract
 
 The DEE algorithm can be used here again to significantly reduce the search space. A short zinc finger protein was redesigned using an early version of the DEE algorithm~\ref{Dahiyat1997}. 
 
-
 \section{Original Criteria}
+The original DEE algorithm~\ref{Desmet1992} proposed single as well as multi-residue rotamer criteria. They are as follows :
 
+\subsection{Singles Elimination criterion}
+The rotamer $r_i^A$ is a dead end if there exists another rotamer $r_i^B$ for amino acid $i$ and the following condition holds: 
+\begin{equation}	
+\label{Singles:criteria} 
+E_i(r_i^A) + \sum_j \min_X E_{ij}(r_i^A,r_j^X) > E_i(r_i^B) + \sum_j \max_X E_{ij}(r_i^B,r_j^X) \quad   ; j\neq i
+\end{equation}
+This basically, says that if the best possible energy contribution by the rotamer $r_i^A$ is worse than the worst possible energy contribution by another rotamer $r_i^B$, letting the rotamers of other amino acids be anything, then $r_i^A$ is a dead-end and should be eliminated.
+This criterion scales $O(r^2)$ where $r$ represents all the rotamers for all the amino acids in the protein. 
+
+\subsection{Pairs Elimination criterion}
+The pairs elimination criterion generalizes the singles elimination criterion by allowing the elimination of rotamer pairs. This can be extended to multi-residue combinations as well. To illustrate this criterion we will introduce the following notation. The self-energy of a pair of rotamers is described as : 
+\[
+\mathcal{E}(r_i^A,r_j^P) = E_i(r_i^A) + E_j(r_j^P) + E_{ij}(r_i^A,r_j^P)
+\]
+A rotamer pair $(r_i^A,r_j^P)$ is a dead-end if there exists another amino acid pair $(r_i^B,r_j^Q)$ such that the following condition holds:
+\[
+\begin{split}
+\mathcal{E}(r_i^A,r_j^P) &+ \sum_k \min_X \left( E_{ik}(r_i^A,r_k^X) + E_{jk}(r_j^P,r_k^X) \right) > \\ & \mathcal{E}(r_i^B,r_j^Q) + \sum_k \max_X \left( E_{ik}(r_i^B,r_k^X) + E_{jk}(r_j^Q,r_k^X) \right) \\
+& \text{where $k\neq j \neq i$}
+\end{split}
+\]
+This criterion scales $O(r^3)$ where $r$ represents all the rotamers for all the amino acids in the protein. More generally, for multi-residue criteria of order $m$ it scales as $O(r^{m+1})$. 
+
+\subsection{Proof of Singles DEE criterion}
+The main idea behind the DEE criteria is local optimality. It means that at GMEC, each residue has a locally optimal assignment. i.e. it is not possible to substitute any other rotamer type for that residue given that the others are in GMEC. Now on to the proof.
+\\
+\\
+The optimality of GMEC means that 
+\begin{equation}
+\label{Singles:opt}
+E(r^*) \leq E(r) \quad \forall r
+\end{equation}
+Let us expand the energy function focusing on a rotamer $r_i^G$ in GMEC. $G$ represents a rotamer in GMEC.
+\begin{equation}
+\label{Singles:gmec}
+E(r^*) = E_{bb} + E_i(r_i^G) + \sum_j E_{ij}(r_i^G,r_j^G) + \sum_j E_j(r_j^G) + \sum_{j<k} E_{jk}(or_j^G,r_k^G) \quad ; j,k\neq i
+\end{equation}
+Now, let us suppose that our residue of interest $r_i$ adopts a different rotameric conformation from  GMEC such as $r_i^T$. The energy is represented as :
+\begin{equation}
+\label{Singles:nongmec}
+E(r) = E_{bb} + E_i(r_i^T) + \sum_j E_{ij}(r_i^T,r_j^G) + \sum_j E_j(r_j^G) + \sum_{j<k} E_{jk}(or_j^G,r_k^G) \quad ; j,k\neq i
+\end{equation}
+Applying the GMEC optimality criteria from equation~\ref{Singles:opt} and combining equations \ref{Singles:gmec} and \ref{Singles:nongmec}, we get the \emph{local optimality criterion}. 
+\begin{align*}
+E_i(r_i^G) + \sum_j E_{ij}(r_i^G,r_j^G) \leq E_i(r_i^T) + \sum_j E_{ij}(r_i^T,r_j^G)  \quad   
+; j\neq i 
+\end{align*}
+
+
+
+Taking mins and maxs on the LHS and RHS still preserves the inequality. We get, 
+\begin{equation}
+E_i(r_i^G) + \sum_j \min_X E_{ij}(r_i^G,r_j^X) \leq E_i(r_i^T) + \sum_j \max_X E_{ij}(r_i^T,r_j^X)  \quad   
+; j\neq i 
+\end{equation}
+
+
+\textbf{Proof By Contradiction:}
+\\
+Let us assume that a particular rotameric conformation $r_i^T$ is in GMEC and that it satisfies the singles criterion from equation~\ref{Singles:criteria}. 
+\[
+E_i(r_i^T) + \sum_j \min_X E_{ij}(r_i^T,r_j^X) > E_i(r_i^G) + \sum_j \max_X E_{ij}(r_i^G,r_j^X) \quad   
+; j\neq i
+\]
+But we have also stated that $r_i^T$ is in GMEC. So,
+\[
+E_i(r_i^T) + \sum_j \min_X E_{ij}(r_i^T,r_j^X) \leq E_i(r_i^G) + \sum_j \max_X E_{ij}(r_i^G,r_j^X) \quad   
+; j\neq i
+\]
+We arrive at a contradiction and hence  $r_i^T$ cannot be in GMEC. 
 
 \section{Goldstein Criteria}
 
@@ -110,7 +180,19 @@ A subproblem in the
 
 \section{DEEPer}
 
+\section{Connections}
+\subsection{Graphical models and Max Product BP}
+
+\subsection{Dynamic Programming}
+
+
 \section{Implementation}
+Calculation  of $E_i(r_i)$ and $E_{ij}(r_i,r_j)$ can be quite expensive and is usually the major cost while applying the DEE procedure. However they scale linearly and quadratically with respect to rotamer size respectively, but just with large constants. 
+
+First the method checks all rotamers for every amino acid and flags them. Then it checks rotamer pairs. This process iterates until no more rotamers or pairs can be eliminated. 
+
+In practice, the number of rotamers can be reduced significantly by applying some screening rules. Pre-screening rotamers that cause clashes and have energy more than 30kcal/mol with backbone and surrounding side chains can be eliminated. Desmet et.al~\ref{Desmet1992} report  that they were able to achieve 44\% and 6\% of the rotamers in their experiment were eliminated based on backbone and side chain clashes thresholding respectively. This meant a reduction of the search space from $2.7\times10^{76}$ to $6.2\times10^{53}$ rotamer conformations. This is quite a large saving. After six iterations of DEE the solution space was reduced to $10,800$. They could easily brute force this. 
+
 
 \subsection{Space requirements}
 The space needed to store the energy values can be a limiting factor for large sequences. Let $N$ be the number of amino acids in the protein and $R$ be the number of rotamers per amino acid. Then we need $O(NR)$ space for unit energy values and $O(N^2R^2)$ for the pairwise energy values. 
@@ -126,6 +208,8 @@ Problems with DEE :
 \item How does the algo scale with size of the system ? Are some large systems impossible to model using this method ? 
 \item How does DEE compare with other non-DEE techniques such as Monte Carlo, etc..
 \item When calculating $E(r)$ the energy of the whole protein are all pairs of energies evaluated or is some sort of distance constraint enforced ?
+\item Should you use bbdep rotamers or bbindep rotamers ?
+\item What is the connection between local optimality of GMEC to graphical models and max product
 \end{itemize}
 
 
@@ -136,6 +220,7 @@ Problems with DEE :
 
 \appendix
 
+
 \section{Datasets used}
 
 
@@ -143,8 +228,7 @@ Problems with DEE :
     \begin{tabular}{ | l | l | p{8cm} |}
     \hline
     Paper & Dataset & Summary \\ \hline
-    Monday & 11C & A clear day with lots of sunshine.  
-    However, the strong breeze will bring down the temperatures. \\ \hline
+    Desmet1992~\ref{Desmet1992} & Insulin, haemocyanin & Compared agreement with pdb for Insulin. Predicted on blind study of haemocyanin \\ \hline
     Tuesday & 9C & Cloudy with rain, across many northern regions. Clear spells
     across most of Scotland and Northern Ireland,
     but rain reaching the far northwest. \\ 
