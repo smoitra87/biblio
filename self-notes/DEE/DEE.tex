@@ -155,7 +155,59 @@ E_i(r_i^T) + \sum_j \min_X E_{ij}(r_i^T,r_j^X) \leq E_i(r_i^G) + \sum_j \max_X E
 \]
 We arrive at a contradiction and hence  $r_i^T$ cannot be in GMEC. 
 
-\section{Goldstein Criteria}
+\section{Goldstein Criterion}
+The Goldstein criterion~\cite{Goldstein1994} provides another criterion that has more eliminating power than the original DEE criterion. This was the first major DEE method developed after the original DEE paper~\cite{Desmet1992}. It is quite an effective, yet simple DEE criteria and is still used today by many modern DEE applications~\cite{Multistate}. 
+
+\subsection{Singles Goldstein}
+A rotamer $r_i^A$ can be marked as dead-ending if there exists another rotamer $r_i^B$ such that the following condition holds:
+\begin{equation}
+\label{Singles:Goldstein}
+E_i(r_i^A) - E_i(r_i^B) + \sum_j \min_X \left(E_{ij}(r_i^A,r_j^X)-E_{ij}(r_i^B,r_j^X) \right) > 0  \quad   ; j \neq i
+\end{equation}
+
+Note that the min over a pair of residues as opposed to the DEE criterion where the min is over a single residue. This increases the computational cost a bit. But overall it is still $O(r^2)$. The savings from extra pruning is believed to outweigh this cost. 
+
+\paragraph{Intuition}: We will now present the reasoning behind this criterion. A rotamer for residue $i$, $r_i^A$ can be replaced with a rotamer $r_i^B$ if it has worse energy with any possible configuration of non $r_i$ rotamers. 
+\[
+E_i(r_i^A) + \sum_j E_{ij}(r_i^A,r_j^X) >  E_i(r_i^B) + \sum_j E_{ij}(r_i^B,r_j^X) \quad \forall X, j\neq i
+\]
+The condition can be rewritten as
+\[
+E_i(r_i^A) + E_i(r_i^B) + \sum_j \left( E_{ij}(r_i^A,r_j^X) - E_{ij}(r_i^B,r_j^X) \right) >  0 \quad \forall X, j \neq i
+\]
+Applying mins and maxes gives us the original DEE criteria from equation~\ref{Singles:criteria}. Applying mins preserves the condition and we get the Singles Goldstein criterion from equation~\ref{Singles:Goldstein}.
+\[
+E_i(r_i^A) + E_i(r_i^B) + \sum_j \min_X \left( E_{ij}(r_i^A,r_j^X) - E_{ij}(r_i^B,r_j^X) \right) >  0 \quad ;j\neq i
+\]
+
+The original DEE criteria is a weaker condition and is not as effective in pruning. The Goldstein criteria basically says that if $r_i^A$ has worse energy than $r_i^B$ while keeping all the non $r_i$ rotamers fixed then it can be eliminated. Figure~\ref{fig:goldstein} clarifies this intuition. 
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{pics/gold1.pdf}
+    \caption{Rotamer $g_\alpha$ has a min of G, while rotamer $h_\alpha$ has max of H. So $g_alpha$ can be eliminated using original DEE criterion. But original DEE is not able to prune rotamer $h'_{\alpha}$ whereas Goldstein is able to because it compares the minimum of the gap between the functions $g_\alpha$ and $h'_\alpha$}
+    \label{fig:goldstein}
+\end{figure}
+
+\subsection{General Goldstein}
+The general Goldstein criteria compares the average of the energies contributions from the neighbours instead of using max, min methods. This is believed to be even more powerful but may be difficult to implement. If this condition holds it means that there must exist a rotameric configuration $r_i^r$ that has better energy than $r_i^A$.
+\[
+E_i(r_i^A)-\sum_{r=1}^R C_r E_i(r_i^r) + \sum_j \min_X \left( E_{ij}(r_i^A,X) - \sum_r C_rE_{ij}(r_i^A,X) \right) >0
+\]
+such that $C_r \geq 0$ and $\sum_r C_r=1$.  A doubt remains as to how to pick $C_r$ ? While any value of $C_r$ would work, which one would you pick to get maximum eliminatory power.
+
+\subsection{Renormalized residues}
+Renormalizing residues refers to the concept of grouping residues together and treating them as one unit. It is similar to the notion of forming cliques in a graphical model. So if in the original model residue $i$ and $j$ had $c$ rotamers each, in the renormalized super-residue it will have $c^2$  rotamers. Applying Singles DEE to this super node is the same as pairwise DEE to non-renormalized model. This can be extended to groups of multiple residues not just pairs. In principle one can bunch all residues together and have to solve the original problem but using way more space. 
+
+
+\subsection{Goldstein Discussion}
+Despite all the DEE stuff, the author mentions that interaction energy cutoffs is really an effective way to first prune the search space. This is an example of where aesthetic purity might be overriden for practical effectiveness. The DEE pruning criteria is rarely powerful enough to be able to find the GMEC, but it reduces the search space enought so that one can apply other techniques such as MCMC to find a reasonably good solution. 
+\\
+\\
+While designing DEE experiments that preserve the GMEC, it is not necessary to prove the effectiveness of your algorithm with respect to how it performs on real protein structures in terms of RMSD. This is because DEE finds the GMEC, so whatever artefacts you might see are due to the force field. 
+\\
+\\
+The goldstein paper also has a discussion about spin glasses which are nothing but ising models. They contain random pairwise energy values, but otherwise have the same formulation as the SCP problem. The author observes that the DEE method is not that effective in pruning spin glasses when compared to proteins side chains. He suggests that this might be due to the folding funnel of proteins.
 
 \section{Split DEE}
 
@@ -193,6 +245,7 @@ First the method checks all rotamers for every amino acid and flags them. Then i
 
 In practice, the number of rotamers can be reduced significantly by applying some screening rules. Pre-screening rotamers that cause clashes and have energy more than 30kcal/mol with backbone and surrounding side chains can be eliminated. Desmet et.al~\ref{Desmet1992} report  that they were able to achieve 44\% and 6\% of the rotamers in their experiment were eliminated based on backbone and side chain clashes thresholding respectively. This meant a reduction of the search space from $2.7\times10^{76}$ to $6.2\times10^{53}$ rotamer conformations. This is quite a large saving. After six iterations of DEE the solution space was reduced to $10,800$. They could easily brute force this. 
 
+One way to speed up calculations for DEE is to pre-cache the min and max value of the energy matrices into vectors while doing the energy calculations themselves. This can prevent repeated min and max calculations while using a little extra memory. Supposing there are $n$ residues and $r$ rotamers per residue then you should not need $O(n^2r)$ space by pre-caching $\min_X E_{ij}(r_i^A,r_j^X)$.
 
 \subsection{Space requirements}
 The space needed to store the energy values can be a limiting factor for large sequences. Let $N$ be the number of amino acids in the protein and $R$ be the number of rotamers per amino acid. Then we need $O(NR)$ space for unit energy values and $O(N^2R^2)$ for the pairwise energy values. 
@@ -225,10 +278,11 @@ Problems with DEE :
 
 
 \begin{center}
-    \begin{tabular}{ | l | l | p{8cm} |}
+    \begin{tabular}{ | p{3cm} | p{3cm} | p{6cm} |}
     \hline
-    Paper & Dataset & Summary \\ \hline
-    Desmet1992~\ref{Desmet1992} & Insulin, haemocyanin & Compared agreement with pdb for Insulin. Predicted on blind study of haemocyanin \\ \hline
+    \textbf{Paper} & \textbf{Dataset} & \bf{Summary} \\ \hline
+    Desmet1992~\cite{Desmet1992} & Insulin, haemocyanin & Compared agreement with pdb for Insulin. Predicted on blind study of haemocyanin \\ \hline
+    Goldstein1994~\cite{Golstein1994} & apo-myogloblin, lysosome, 7LZM, 5MBA& Showed parameter reduction, compute time. Randomly perturbed energy functions and compared to spin glasses. \\ \hline
     Tuesday & 9C & Cloudy with rain, across many northern regions. Clear spells
     across most of Scotland and Northern Ireland,
     but rain reaching the far northwest. \\ 
