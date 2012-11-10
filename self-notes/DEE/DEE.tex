@@ -1,4 +1,4 @@
-\documentclass[a4]{article}
+\documentclass{article}
 \usepackage{graphicx}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{color}
@@ -8,9 +8,9 @@
 
 \begin{document}
 
-\title{Review Notes on DEE}
+\title{Review Notes on Dead End Elimination(DEE)}
 
-\author{Subhodeep Moitra \\ {\tt subhodee@andrew.cmu.edu}}
+\author{Subhodeep Moitra \\ {\tt subho@cmu.edu}}
 
 \maketitle
 
@@ -33,9 +33,10 @@ Every DEE algorithm essentially has the following components :
 \item An objective function considered to be the energy function to be minimized
 \end{enumerate}
 
-
-
-The DEE algorithm has undergone a lot of change since it was first published~\ref{Desmet92} in 1992. Newer criteria for the pruning the search space emerged. Newer criteria are measured by their efficiency i.e. how quickly you can check criterion and the eliminating power i.e. how much of the space they can prune. Stronger criteria were added that were able to prune out more of the search space. A number of novel criteria and DEE models emerged that are able to do some non-traditional DEE tasks such as Backrub modeling, flexible backbone, continuous rotamers etc. The DEE algorithm is no magic bullet. Even though it is typically able to prune the search space of protein problems effectively, the exhaustive search to be performed afterwards can still be quite computationally demanding.
+The energy function has pairwise energy terms for a reason. This relative merits of a candidate rotamer at a particular position is evaluated using only the contributions from the unit and the pairwise energy terms and not the total energy of all conformations in all positions. By evaluating the relative energy contributions of energy of the candidates rotamers for the position under consideration it is possible to ascertain incompatibility with GMEC without knowing the actual minimum energy. The combinatorial cost of this procedure is far less than actually enumerating the entire space in order to find the GMEC. 
+\\
+\\
+The DEE algorithm has undergone a lot of change since it was first published~\cite{Desmet1992} in 1992. Newer criteria for the pruning the search space emerged. Newer criteria are measured by their efficiency i.e. how quickly you can check criterion and the eliminating power i.e. how much of the space they can prune. Stronger criteria were added that were able to prune out more of the search space. A number of novel criteria and DEE models emerged that are able to do some non-traditional DEE tasks such as Backrub modeling, flexible backbone, continuous rotamers etc. The DEE algorithm is no magic bullet. Even though it is typically able to prune the search space of protein problems effectively, the exhaustive search to be performed afterwards can still be quite computationally demanding.
 
 \subsection{Side chain placement problem}
 The side chain placement problem(SCP) refers to finding the conformation of the side chains of the protein assuming a fixed backbone. The entire continuous space of the side chains is not modelled. They are usually discretized into a set of discrete rotamers~\ref{Dunbrack}. Every conformation has an associated energy. The energy function is decomposable into energy contributions from each of the individual amino acids or pairs of amino acids. This is reasonable since atoms in proteins are assumed to interact only by two body potentials. The energy of particular conformation represented by a vector $r$ is represented as : 
@@ -91,7 +92,7 @@ The rotamer $r_i^A$ is a dead end if there exists another rotamer $r_i^B$ for am
 E_i(r_i^A) + \sum_j \min_X E_{ij}(r_i^A,r_j^X) > E_i(r_i^B) + \sum_j \max_X E_{ij}(r_i^B,r_j^X) \quad   ; j\neq i
 \end{equation}
 This basically, says that if the best possible energy contribution by the rotamer $r_i^A$ is worse than the worst possible energy contribution by another rotamer $r_i^B$, letting the rotamers of other amino acids be anything, then $r_i^A$ is a dead-end and should be eliminated.
-This criterion scales $O(r^2)$ where $r$ represents all the rotamers for all the amino acids in the protein. 
+This criterion appears to scale as $O(n^2r^3)$ where $r$ represents all the rotamers for all the amino acids in the protein and $n$ is the length of the protein. However, we can achieve a $O(n^2r^2)$ computational cost by computing the left hand side and the right hand side separately and storing the results~\cite{Pierce2000}.
 
 \subsection{Pairs Elimination criterion}
 The pairs elimination criterion generalizes the singles elimination criterion by allowing the elimination of rotamer pairs. This can be extended to multi-residue combinations as well. To illustrate this criterion we will introduce the following notation. The self-energy of a pair of rotamers is described as : 
@@ -119,12 +120,12 @@ E(r^*) \leq E(r) \quad \forall r
 Let us expand the energy function focusing on a rotamer $r_i^G$ in GMEC. $G$ represents a rotamer in GMEC.
 \begin{equation}
 \label{Singles:gmec}
-E(r^*) = E_{bb} + E_i(r_i^G) + \sum_j E_{ij}(r_i^G,r_j^G) + \sum_j E_j(r_j^G) + \sum_{j<k} E_{jk}(or_j^G,r_k^G) \quad ; j,k\neq i
+E(r^*) = E_{bb} + E_i(r_i^G) + \sum_j E_{ij}(r_i^G,r_j^G) + \sum_j E_j(r_j^G) + \sum_{j<k} E_{jk}(r_j^G,r_k^G) \quad ; j,k\neq i
 \end{equation}
 Now, let us suppose that our residue of interest $r_i$ adopts a different rotameric conformation from  GMEC such as $r_i^T$. The energy is represented as :
 \begin{equation}
 \label{Singles:nongmec}
-E(r) = E_{bb} + E_i(r_i^T) + \sum_j E_{ij}(r_i^T,r_j^G) + \sum_j E_j(r_j^G) + \sum_{j<k} E_{jk}(or_j^G,r_k^G) \quad ; j,k\neq i
+E(r) = E_{bb} + E_i(r_i^T) + \sum_j E_{ij}(r_i^T,r_j^G) + \sum_j E_j(r_j^G) + \sum_{j<k} E_{jk}(r_j^G,r_k^G) \quad ; j,k\neq i
 \end{equation}
 Applying the GMEC optimality criteria from equation~\ref{Singles:opt} and combining equations \ref{Singles:gmec} and \ref{Singles:nongmec}, we get the \emph{local optimality criterion}. 
 \begin{align*}
@@ -156,7 +157,7 @@ E_i(r_i^T) + \sum_j \min_X E_{ij}(r_i^T,r_j^X) \leq E_i(r_i^G) + \sum_j \max_X E
 We arrive at a contradiction and hence  $r_i^T$ cannot be in GMEC. 
 
 \section{Goldstein Criterion}
-The Goldstein criterion~\cite{Goldstein1994} provides another criterion that has more eliminating power than the original DEE criterion. This was the first major DEE method developed after the original DEE paper~\cite{Desmet1992}. It is quite an effective, yet simple DEE criteria and is still used today by many modern DEE applications~\cite{Multistate}. 
+The Goldstein criterion~\cite{Goldstein1994} provides another criterion that has more eliminating power than the original DEE criterion. This was the first major DEE method developed after the original DEE paper~\cite{Desmet1992}. It is quite an effective, yet simple DEE criteria and is still used today by many modern DEE applications~\cite{Fromer2010}. 
 
 \subsection{Singles Goldstein}
 A rotamer $r_i^A$ can be marked as dead-ending if there exists another rotamer $r_i^B$ such that the following condition holds:
@@ -165,7 +166,7 @@ A rotamer $r_i^A$ can be marked as dead-ending if there exists another rotamer $
 E_i(r_i^A) - E_i(r_i^B) + \sum_j \min_X \left(E_{ij}(r_i^A,r_j^X)-E_{ij}(r_i^B,r_j^X) \right) > 0  \quad   ; j \neq i
 \end{equation}
 
-Note that the min over a pair of residues as opposed to the DEE criterion where the min is over a single residue. This increases the computational cost a bit. But overall it is still $O(r^2)$. The savings from extra pruning is believed to outweigh this cost. 
+Note that the min over a pair of residues as opposed to the DEE criterion where the min is over a single residue. This increases the computational cost a bit. But overall it is still $O(r^2)$ in the number of rotamers per residue. The savings from extra pruning is believed to outweigh this cost. For the whole protein the cost comes to $O(n^2r^3)$. This is because $r_i^A$ is $O(nr)$, $\sum_j$ is $O(n)$ , $r_i^B$ is $O(r)$ and finally $\min_X$ is $O(r)$. All this combined together gives $O(n^2r^3)$. The singles goldstein can be extended to the doubles goldtein criteria in a similar manner as the original DEE. The computational cost of the doubles goldstein criteria is $O(n^3r^5)$~\cite{Pierce2000}. 
 
 \paragraph{Intuition}: We will now present the reasoning behind this criterion. A rotamer for residue $i$, $r_i^A$ can be replaced with a rotamer $r_i^B$ if it has worse energy with any possible configuration of non $r_i$ rotamers. 
 \[
@@ -185,16 +186,29 @@ The original DEE criteria is a weaker condition and is not as effective in pruni
 \begin{figure}[h!]
     \centering
     \includegraphics[width=0.8\textwidth]{pics/gold1.pdf}
-    \caption{Rotamer $g_\alpha$ has a min of G, while rotamer $h_\alpha$ has max of H. So $g_alpha$ can be eliminated using original DEE criterion. But original DEE is not able to prune rotamer $h'_{\alpha}$ whereas Goldstein is able to because it compares the minimum of the gap between the functions $g_\alpha$ and $h'_\alpha$}
+    \caption{Rotamer $g_\alpha$ has a min of G, while rotamer $h_\alpha$ has max of H. So $g_\alpha$ can be eliminated using original DEE criterion. But original DEE is not able to prune rotamer $h'_{\alpha}$ whereas Goldstein is able to because it compares the minimum of the gap between the functions $g_\alpha$ and $h'_\alpha$.Figure from~\cite{Goldstein1994}.}
     \label{fig:goldstein}
 \end{figure}
+
+\pagebreak
 
 \subsection{General Goldstein}
 The general Goldstein criteria compares the average of the energies contributions from the neighbours instead of using max, min methods. This is believed to be even more powerful but may be difficult to implement. If this condition holds it means that there must exist a rotameric configuration $r_i^r$ that has better energy than $r_i^A$.
 \[
 E_i(r_i^A)-\sum_{r=1}^R C_r E_i(r_i^r) + \sum_j \min_X \left( E_{ij}(r_i^A,X) - \sum_r C_rE_{ij}(r_i^A,X) \right) >0
 \]
-such that $C_r \geq 0$ and $\sum_r C_r=1$.  A doubt remains as to how to pick $C_r$ ? While any value of $C_r$ would work, which one would you pick to get maximum eliminatory power.
+such that $C_r \geq 0$ and $\sum_r C_r=1$. See Figure~\ref{fig:goldstein_gen} for an illustration of the generalized goldstein criteria intuition. 
+
+ A doubt remains as to how to pick $C_r$? While any value of $C_r$ would work, which one would you pick to get maximum eliminatory power? This has been elaborated by~\cite{Lasters1995} who use a linear programming approach in order to find the optimal value of $C_r$. But a problem remains that even on finding the optimal value,e ven if there exists one candidate whose energy is greater than the rotamer under elimination consideration then it increases the average energy of the ensemble for that conformation.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{pics/goldgen.pdf}
+    \caption{Rotamer $i_r$ cannot be eliminated by either of the rotamers $i_{t1}$ or $i_{t2}$ since they are greater than $i_r$ for some conformation. However the average of the two taken together $C_r=0.5$ is lower than the $i_r$ everywhere, so this is able to eliminate $i_r$.  Figure reproduced from~\cite{Pierce2000}}
+    \label{fig:goldstein_gen}
+\end{figure}
+
+\pagebreak
 
 \subsection{Renormalized residues}
 Renormalizing residues refers to the concept of grouping residues together and treating them as one unit. It is similar to the notion of forming cliques in a graphical model. So if in the original model residue $i$ and $j$ had $c$ rotamers each, in the renormalized super-residue it will have $c^2$  rotamers. Applying Singles DEE to this super node is the same as pairwise DEE to non-renormalized model. This can be extended to groups of multiple residues not just pairs. In principle one can bunch all residues together and have to solve the original problem but using way more space. 
@@ -210,33 +224,99 @@ While designing DEE experiments that preserve the GMEC, it is not necessary to p
 The goldstein paper also has a discussion about spin glasses which are nothing but ising models. They contain random pairwise energy values, but otherwise have the same formulation as the SCP problem. The author observes that the DEE method is not that effective in pruning spin glasses when compared to proteins side chains. He suggests that this might be due to the folding funnel of proteins.
 
 \section{Split DEE}
+The split DEE(sDEE) is a stronger criterion that can be used to further prune the search space \cite{Pierce2000}. This can be used when the goldstein criteria can no longer identify any more dead-ends. sDEE splits the solution space into partitions and then runs Goldstein DEE in each of these partitions. If Goldstein DEE is able to eliminate a rotamer $r_i^A$ from each of these partitions then we can remove $r_i^A$ from the whole space. Once some rotamers have been removed using sDEE, Goldstein singles and pairs DEE can again be applied iteratively in order to prune out more of the search space. The split DEE criterion has a singles as well as a general version. The singles sDEE criterion splits on one residue only. We split on each $r_k^v$ where $r_k^v \in r_k$, the rotamer space of residue $k$. An illustration of the splitDEE criterion is provided in Figure~\ref{fig:splitDEE}. The singles sDEE criterion states that $r_i^A$ can be eliminated if $\exists$ a $r_i^B$ for every partition of $r_k^v$ such that the following condition holds: 
+
+\begin{equation}
+\label{eqn:sDEE_singles}
+\begin{split}
+E_i(r_i^A) - E_i(r_i^B) &+ \sum_{j\neq i \neq k} \min_X \left(E_{ij}(r_i^A,r_j^X)-E_{ij}(r_i^B,r_j^X) \right)\\
+&+ \left[E_{ik}(r_i^A,r_k^v)-E_{ik}(r_i^B,r_k^v)\right] > 0 
+\end{split}
+\end{equation}
+The computational cost of the singles sDEE criterion is $O(n^2r^3)$ which is the same as the singles goldstein criteria. Naively, it might appeat that the cost is $O(n^2r^4)$ because of the additional residue $k$. However it can be avoided if the implementation is done a little cleverly by storing computations. We will present the algorithm that gives this bound. 
+
+\subsection{General Split DEE}
+The general sDEE criterions allows splits on more than one residue. Suppose we split on s residues such that $k \in \{k_1,\dots,k_s\}$, the general sDEE criteria becomes :
+\begin{equation}
+\label{eqn:sDEE_gen}
+\begin{split}
+E_i(r_i^A) - E_i(r_i^B) &+ \sum_{j\neq i \neq k_1\dots k_s} \min_X \left(E_{ij}(r_i^A,r_j^X)-E_{ij}(r_i^B,r_j^X) \right)\\
+&+ \sum_{k=k_1\dots k_s}\left[E_{ik}(r_i^A,r_k^v)-E_{ik}(r_i^B,r_k^v)\right] > 0 
+\end{split}
+\end{equation}
+
+The computational cost of the general split DEE quickly becomes exponential in the number of splits.  It does not become feasible for using the general sDEE for more than a few splits. In particular for $s$ splits, the cost is $O(r^{2+s}nq)$  where q is the number of ways of choosing $s$ splits from $n-1$ residues.
+\[
+q = \frac{(n-1)!}{s!(n-1-s)!}
+\]
+This still leaves two questions unanswered.(1) How many splits to choose? (2) How to pick which position to split on ? These questions are answered somewhat in the magic bullet section.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{pics/split1.pdf}
+    \caption{Rotamer $i_r$ cannot be eliminated by either of the rotamers $i_{t1}$ or $i_{t2}$ since they are greater than $i_r$ for some conformation. However if the conformation space is split into two halves as shown by the vertical line, then it is possible to eliminate $i_r$ from each of the partitions. Figure reproduced from~\cite{Pierce2000}}.
+    \label{fig:splitDEE}
+\end{figure}
+
+\pagebreak
+
+
+\subsection{Magic Bullet Splitting}
+
+\subsection{Singles Split DEE Implementation}
+
+
+\subsection{Bottom Line DEE}
+We present the Bottom line DEE technique is a theoretically interesting and is closely related to split DEE. It has the most eliminating power. However it is not possible to implement it in practice as it involves taking a minimum over energies over all rotamers of all neigbhors of the residue under consideration, a $O(r^n)$ calculation.  The main idea is that it is not necessary for the same rotamer $r_i^B$ to eliminate the rotamer $r_i^A$ at all conformations of the neighbours. It is merely sufficient for there to exist some candidate rotamer that is able to eliminate the rotamer $r_i^A$ under consideration. An illustration of the Bottom Line DEE is shown in Figure~\ref{fig:bottomDEE}.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{pics/bottom.pdf}
+    \caption{Rotamer $i_r$ cannot be eliminated by either of the rotamers $i_{t1}$ or $i_{t2}$ since they are greater than $i_r$ for some conformation. However the minimum of the two taken together is lower than the $i_r$ everywhere, so this is able to eliminate $i_r$. Unfortunately, though theoretically appealing it is not possible to compute this minimum value efficiently in practice since it takes $O(r^n)$ in practice. Figure reproduced from~\cite{Pierce2000}}.
+    \label{fig:bottomDEE}
+\end{figure}
+
+\pagebreak
 
 \section{Gordon Criteria}
 
 \section{DEE for Protein Design- Mayo}
 
-\section{DEE for Multistate protein design}
+\section{Post DEE searches}
+\subsection{DEE/A*}
+
+\subsection{Branch and Terminate}
+
+\subsection{K*??} 
+
+\section{Newer Methods}
+
+\subsection{DEE for Multistate protein design}
 A subproblem in the 
 
-\section{DEE for Flexible backbone}
+\subsection{DEE for Flexible backbone}
 
-\section{minDEE}
+\subsection{minDEE/K*}
 
-\section{Restricted DEE}
+\subsection{restricted DEE - Lilien}
 
-\section{iminDEE - Continuous rotamers}
+\subsection{iminDEE - Continuous rotamers}
 
-\section{Backrub}
+\subsection{Backrub}
 
-\section{BroMAP}
+\subsection{BroMAP}
 
-\section{DEEPer}
+\subsection{DEEPer}
+
+\subsection{Ensemble K*}
 
 \section{Connections}
 \subsection{Graphical models and Max Product BP}
 
 \subsection{Dynamic Programming}
 
+
+\section{Ideas and Future Directions}
 
 \section{Implementation}
 Calculation  of $E_i(r_i)$ and $E_{ij}(r_i,r_j)$ can be quite expensive and is usually the major cost while applying the DEE procedure. However they scale linearly and quadratically with respect to rotamer size respectively, but just with large constants. 
@@ -290,27 +370,6 @@ Problems with DEE :
     \end{tabular}
 \end{center}
 
-\section{Single State DEE}
-The First DEE algorithm~\cite{Desmet1992} was used to prune out the search space by using the following criterion. 
-
-Eliminate $r_i^k$, rotamer k at position i if the following condition holds
-\[
-E_i(r_i^k) + \sum_j \min_s E_{ij}(r_i^k,r_j^s) > E_i(r_i^l) + \sum_j \max_s E_{ij}(r_i^l,r_j^s)
-\]
-
-
-\section{Goldstein criteria}
-This is a stronger condition than the single state DEE criteria.
-Eliminate $r_i^k$, rotamer k at position i if the following condition holds
-\[
-E_i(r_i^k) - E_i(r_i^l) + \sum_j \min_s \left(E_{ij}(r_i^k,r_j^s) - E_{ij}(r_i^l,r_j^s) \right)> 0  
-\]
-
-Basically, this condition says that the energy function can be lowered by changing $r_i^k$ to $r_i^l$ while keeping all the non $r_i$ rotamers fixed. 
-
-
-\section{Split DEE}
-What happens when you cannot prune some rotamers away by using these criteria. Then you cluster rotamers into groups and then try to prune rotamers in these groups. This however causes a large increase in computation time, since computation is exponential in the number of subgroups. Why ?
 
 \section{Multistate DEE}
 DEE solves a discrete combinatorial optimization problem. The main contribution of the DEE algorithm is that it reduces the search space by provably pruning out some candidates. However it has to make sure that whne pruning out candidates it still preserves the GMEC. For it to be able to do this it needs to make some assumptions about the form of the energy function. 
@@ -343,8 +402,6 @@ One strategy to do multistate design could be to combine the rotameric spaces of
 However, this scheme assumes that the both states will have the same rotameric states. However, we want to do the minimization over the sequence space while letting the rotamers be different in each state. 
 
 
-
-\section{Backbone Flexibility DEE}
 
 \bibliographystyle{plain}
 \bibliography{refs}
