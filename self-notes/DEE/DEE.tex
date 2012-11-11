@@ -3,6 +3,10 @@
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{color}
 
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+%\usepackage{minted}
+
 \DeclareMathOperator*{\argmax}{arg\,max}
 \DeclareMathOperator*{\argmin}{arg\,min}
 
@@ -15,7 +19,7 @@
 \maketitle
 
 \begin{abstract}
-To be added soon
+The Dead-End Elimination(DEE) algorithm is a technique for pruning the search space for discrete combinatorial optimatization problems. It has traditionally been applied to several problems in computational structural biology such as side chain placement and protein design. It works by provably eliminating candidates that cannot be part of the global minimum energy conformation(GMEC). There are a number of different DEE criteria and they have different eliminating power, computational costs an applications. In this review we present the major DEE criteria, intuition of why it works and also new research ideas. 
 \end{abstract}
 
 \section{Introduction}
@@ -83,7 +87,7 @@ where $R_{all}$ corresponds to all the rotamers of all the amino acids. In pract
 The DEE algorithm can be used here again to significantly reduce the search space. A short zinc finger protein was redesigned using an early version of the DEE algorithm~\ref{Dahiyat1997}. 
 
 \section{Original Criteria}
-The original DEE algorithm~\ref{Desmet1992} proposed single as well as multi-residue rotamer criteria. They are as follows :
+The original DEE algorithm~\cite{Desmet1992} proposed single as well as multi-residue rotamer criteria. They are as follows :
 
 \subsection{Singles Elimination criterion}
 The rotamer $r_i^A$ is a dead end if there exists another rotamer $r_i^B$ for amino acid $i$ and the following condition holds: 
@@ -210,7 +214,34 @@ such that $C_r \geq 0$ and $\sum_r C_r=1$. See Figure~\ref{fig:goldstein_gen} fo
 
 \pagebreak
 
-\subsection{Singles Goldstein Pseudo-code}
+\subsection{Singles Goldstein Implementation}
+The psuedo-code for one round of singles goldstein is presented. The energy values for the unit and pairwise terms have been pre-computed. The complexity of this algorithm is $O(n^2r^3)$. 
+
+\begin{algorithm}
+\caption{Singles Goldstein DEE} \label{algo:goldstein}
+\begin{algorithmic}
+\For{each position $i$}
+	\For{each rotamer $r$ at $i$}
+		\For{each candidate rotamer $t$ at $i$}
+			\State $X \gets E_i(r_i^r) - E_i(r_i^t)$
+			\ForAll{positions $j \not= i$} 
+				\ForAll{rotamers $u$ at position $j$}
+					\State $Y = \min_u\left[E_{ij}(r_i^r,r_j^u) - E_{ij}(r_i^t,r_j^u) \right]$
+				\EndFor
+				\State $X \gets X + Y$
+			\EndFor
+			\If{$X>0$}
+				\State eliminate $r_i^r$
+				\State break
+			\EndIf
+		\EndFor
+	\EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\pagebreak
+
 
 \subsection{Renormalized residues}
 Renormalizing residues refers to the concept of grouping residues together and treating them as one unit. It is similar to the notion of forming cliques in a graphical model. So if in the original model residue $i$ and $j$ had $c$ rotamers each, in the renormalized super-residue it will have $c^2$  rotamers. Applying Singles DEE to this super node is the same as pairwise DEE to non-renormalized model. This can be extended to groups of multiple residues not just pairs. In principle one can bunch all residues together and have to solve the original problem but using way more space. 
@@ -281,7 +312,43 @@ Is this is a better a scoring metric ?
 
 For $s=2$ splits they call the split as $s=2_{mb}$ and this has a $O(r^4n)$ cost which is only a factor $O(r/n)$ cost more than the full $s=1$ singles sDEE of $O(n^2r^3)$. 
 
-\subsection{Singles sDEE Implementation}
+\subsection{Singles Split DEE Implementation}
+
+\begin{algorithm}
+\caption{The simple split DEE} \label{algo:sDEE}
+\begin{algorithmic}
+\For{each position $i$}
+	\For{each rotamer $r$ at $i$}
+		\For{each candidate rotamer $t$ at $i$}
+			\ForAll{positions $j\not= i$}
+				\ForAll{rotamers $u$ at position $j$}\
+					\State $Y_{jt} \gets \min_u\left[E_{ij}(r_i^r,r_j^u) - E_{ij}(r_i^t,r_i^u)\right]$
+				\EndFor
+			\EndFor
+		\EndFor
+		\For{each splitting position $k$}
+			\State $elim_v \gets false \quad \forall v$ at $k$
+			\For{each competitor $t$ at $i$}
+				\State $X \gets E_i(r_i^r) - E_i(r_i^t)$
+				\ForAll{other positions $j$, $j\not=i\not=k$}
+					\State $X \gets X + Y_{jt}$
+				\EndFor
+				\For{each partition $v$ at $k$}
+					\If{$X+\left[E_{ik}(r_i^r,r_t^v) - E_{ik}(r_i^t,r_k^v)\right] > 0$}
+						\State $elim_v \gets true$						
+					\EndIf
+				\EndFor
+				\If{$elim_v == true \quad \forall v$ at $k$} 
+					\State eliminate $r_i^r$ and break
+				\EndIf
+			\EndFor
+		\EndFor
+	\EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\pagebreak
 
 All of the unit and pairwise energy terms are precomputed before the DEE algorithm is applied. The key point of the implementation to save compute cost is that the minima over $u$ must be computed prior to splitting over $k$ to avoid higher complexity due to nesting. 
 \\
@@ -318,45 +385,43 @@ We present the Bottom line DEE technique as it is theoretically interesting and 
 
 \subsection*{Split DEE discussion}
 The authors in~\cite{Pierce2000} claim that this particular implementation is tailored towards protein design applications so that it favors $n \ll r$ calculations. This does not make sense since we are getting a $O(n^2r^3)$ complexity, wouldn't it better to have $O(n^3r^2)$ ?
-\section{Gordon Criteria}
+%\section{Gordon Criteria}
+%
+%\section{DEE for Protein Design- Mayo}
+%
+%\section{Post DEE searches}
+%\subsection{DEE/A*}
+%
+%\subsection{Branch and Terminate}
+%
+%\subsection{K*??} 
+%
+%\section{Newer Methods}
+%
+%\subsection{DEE for Multistate protein design}
+%A subproblem in the 
+%
+%\subsection{DEE for Flexible backbone}
+%
+%\subsection{minDEE/K*}
+%
+%\subsection{restricted DEE - Lilien}
+%
+%\subsection{iminDEE - Continuous rotamers}
+%
+%\subsection{Backrub}
+%
+%\subsection{BroMAP}
+%
+%\subsection{DEEPer}
+%
+%\subsection{Ensemble K*}
+%
+%\section{Connections}
+%\subsection{Graphical models and Max Product BP}
+%
+%\subsection{Dynamic Programming}
 
-\section{DEE for Protein Design- Mayo}
-
-\section{Post DEE searches}
-\subsection{DEE/A*}
-
-\subsection{Branch and Terminate}
-
-\subsection{K*??} 
-
-\section{Newer Methods}
-
-\subsection{DEE for Multistate protein design}
-A subproblem in the 
-
-\subsection{DEE for Flexible backbone}
-
-\subsection{minDEE/K*}
-
-\subsection{restricted DEE - Lilien}
-
-\subsection{iminDEE - Continuous rotamers}
-
-\subsection{Backrub}
-
-\subsection{BroMAP}
-
-\subsection{DEEPer}
-
-\subsection{Ensemble K*}
-
-\section{Connections}
-\subsection{Graphical models and Max Product BP}
-
-\subsection{Dynamic Programming}
-
-
-\section{Ideas and Future Directions}
 
 \section{Implementation}
 Calculation  of $E_i(r_i)$ and $E_{ij}(r_i,r_j)$ can be quite expensive and is usually the major cost while applying the DEE procedure. However they scale linearly and quadratically with respect to rotamer size respectively, but just with large constants. 
@@ -395,6 +460,69 @@ Problems with DEE :
 \text{Score}_2 = \max_k \max_B \max_v \left( \left| E(r_i^Ar_k^v) - E(r_i^Br_k^v) \right| \right)
 \]
 \end{itemize}
+
+
+
+%\begin{algorithmic}
+%\If {$i\geq maxval$}
+%    \State $i\gets 0$
+%\Else
+%    \If {$i+k\leq maxval$}
+%        \State $i\gets i+k$
+%    \EndIf
+%\EndIf
+%\end{algorithmic}
+%
+%\begin{algorithm}
+%\caption{The Bellman-Kalaba algorithm}
+%\begin{algorithmic}[1]
+%\Procedure {BellmanKalaba}{$G$, $u$, $l$, $p$}
+%\ForAll {$v \in V(G)$}
+%\State $l(v) \leftarrow \infty$
+%\EndFor
+%\State $l(u) \leftarrow 0$
+%\Repeat
+%\For {$i \leftarrow 1, n$}
+%\State $min \leftarrow l(v_i)$
+%\For {$j \leftarrow 1, n$}
+%\If {$min > e(v_i, v_j) + l(v_j)$}
+%\State $min \leftarrow e(v_i, v_j) + l(v_j)$
+%\State $p(i) \leftarrow v_j$
+%\EndIf
+%\EndFor
+%\State $l’(i) \leftarrow min$
+%\EndFor
+%\State $changed \leftarrow l \not= l’$
+%\State $l \leftarrow l’$
+%\Until{$\neg changed$}
+%\EndProcedure
+%\Statex
+%\Procedure {FindPathBK}{$v$, $u$, $p$}
+%\If {$v = u$}
+%\State \textbf{Write} $v$
+%\Else
+%\State $w \leftarrow v$
+%\While {$w \not= u$}
+%\State \textbf{Write} $w$
+%\State $w \leftarrow p(w)$
+%\EndWhile
+%\EndIf
+%\EndProcedure
+%\end{algorithmic}
+%\end{algorithm}
+
+%\definecolor{bg}{rgb}{0.95,0.95,0.90}
+%\begin{minted}[bgcolor=bg,linenos=true,mathescape]{python}
+%class A(object) : 
+%	""" This is class A """
+%	# This calculates $\sum_{j<i} \min_X \left[ E_{ij}(r_i^A,r_j^X) \right]$
+%	def __init__(self) : 
+%		a = "An object"
+%	def print_a(self) : 
+%		print self.a
+%\end{minted}
+
+
 
 \pagebreak
 \newpage
