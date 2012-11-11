@@ -210,6 +210,8 @@ such that $C_r \geq 0$ and $\sum_r C_r=1$. See Figure~\ref{fig:goldstein_gen} fo
 
 \pagebreak
 
+\subsection{Singles Goldstein Pseudo-code}
+
 \subsection{Renormalized residues}
 Renormalizing residues refers to the concept of grouping residues together and treating them as one unit. It is similar to the notion of forming cliques in a graphical model. So if in the original model residue $i$ and $j$ had $c$ rotamers each, in the renormalized super-residue it will have $c^2$  rotamers. Applying Singles DEE to this super node is the same as pairwise DEE to non-renormalized model. This can be extended to groups of multiple residues not just pairs. In principle one can bunch all residues together and have to solve the original problem but using way more space. 
 
@@ -233,7 +235,7 @@ E_i(r_i^A) - E_i(r_i^B) &+ \sum_{j\neq i \neq k} \min_X \left(E_{ij}(r_i^A,r_j^X
 &+ \left[E_{ik}(r_i^A,r_k^v)-E_{ik}(r_i^B,r_k^v)\right] > 0 
 \end{split}
 \end{equation}
-The computational cost of the singles sDEE criterion is $O(n^2r^3)$ which is the same as the singles goldstein criteria. Naively, it might appeat that the cost is $O(n^2r^4)$ because of the additional residue $k$. However it can be avoided if the implementation is done a little cleverly by storing computations. We will present the algorithm that gives this bound. 
+The residue k is over all residue positions $k \in \{1,\dots, n\}\backslash i$. The computational cost of the singles sDEE criterion is $O(n^2r^3)$ which is the same as the singles goldstein criteria. Naively, it might appear that the cost is $O(n^2r^4)$ because of the additional residue $k$. However it can be avoided if the implementation is done a little cleverly by storing computations. We will present the algorithm that gives this bound. 
 
 \subsection{General Split DEE}
 The general sDEE criterions allows splits on more than one residue. Suppose we split on s residues such that $k \in \{k_1,\dots,k_s\}$, the general sDEE criteria becomes :
@@ -245,11 +247,15 @@ E_i(r_i^A) - E_i(r_i^B) &+ \sum_{j\neq i \neq k_1\dots k_s} \min_X \left(E_{ij}(
 \end{split}
 \end{equation}
 
-The computational cost of the general split DEE quickly becomes exponential in the number of splits.  It does not become feasible for using the general sDEE for more than a few splits. In particular for $s$ splits, the cost is $O(r^{2+s}nq)$  where q is the number of ways of choosing $s$ splits from $n-1$ residues.
+The residue $k_1\dots k_s$ is over all $n-1 \choose s$ sets of residues . The computational cost of the general split DEE quickly becomes exponential in the number of splits.  It is not feasible to use the general sDEE for more than a few splits. In particular for $s$ splits, the cost is $O(r^{2+s}nq)$  where q is the number of ways of choosing $s$ splits from $n-1$ residues.
 \[
 q = \frac{(n-1)!}{s!(n-1-s)!}
 \]
-This still leaves two questions unanswered.(1) How many splits to choose? (2) How to pick which position to split on ? These questions are answered somewhat in the magic bullet section.
+It decomposes as $nr^2(n-s)r + nr{n\choose s}r(n-s)$. This answers two FAQs about sDEE. 
+\begin{enumerate}
+\item How many splits to choose? - s
+\item How to pick which position to split on ? - Iterate over all $n-1 \choose s$
+\end{enumerate}
 
 \begin{figure}[h!]
     \centering
@@ -257,17 +263,49 @@ This still leaves two questions unanswered.(1) How many splits to choose? (2) Ho
     \caption{Rotamer $i_r$ cannot be eliminated by either of the rotamers $i_{t1}$ or $i_{t2}$ since they are greater than $i_r$ for some conformation. However if the conformation space is split into two halves as shown by the vertical line, then it is possible to eliminate $i_r$ from each of the partitions. Figure reproduced from~\cite{Pierce2000}}.
     \label{fig:splitDEE}
 \end{figure}
-
 \pagebreak
 
-
 \subsection{Magic Bullet Splitting}
+The concept of Magic Bullet~\cite{Gordon1998} Doubles was introduced as a technique for speeding up the calculations for pairs elimination criteria for DEE. They used this to (1) reduce computational cost to $O(n^3r^4)$ down from $O(n^3r^5)$ that is normally needed for Goldstein doubles (2) Increase the elimination power by 20\% to 60\% if using the same $O(n^3r^5)$ complexity. 
+\\
+\\
+The authors of sDEE developed a version of magic bullet for choosing exactly one of the $n-1 \choose s$ possible $k_1\dots k_s$ split points as the magic bullet split point. This would reduce complexity from $O(r^{2+s}nq)$ to $O(r^{2+s}n)$, effectively getting rid of the $O(q)$ term. Intuitively, the best splitting locations should be those that have the best strong interactions with $r_i$. They use the following metric to rank the possible split points which basically says that there is a significant energy difference between $r_i^A$ and $r_i^B$ when the split residue $r_k$ is used. 
+\[
+\text{Score}_1 = \min_k \min_B \min_v[E(r_i^Ar_k^v) - E(r_i^Br_k^v)]
+\]
 
-\subsection{Singles Split DEE Implementation}
+Is this is a better a scoring metric ? 
+\[
+\text{Score}_2 = \max_k \max_B \max_v \left( \left| E(r_i^Ar_k^v) - E(r_i^Br_k^v) \right| \right)
+\]
+
+For $s=2$ splits they call the split as $s=2_{mb}$ and this has a $O(r^4n)$ cost which is only a factor $O(r/n)$ cost more than the full $s=1$ singles sDEE of $O(n^2r^3)$. 
+
+\subsection{Singles sDEE Implementation}
+
+All of the unit and pairwise energy terms are precomputed before the DEE algorithm is applied. The key point of the implementation to save compute cost is that the minima over $u$ must be computed prior to splitting over $k$ to avoid higher complexity due to nesting. 
+\\
+\\
+The residue k is over all residue positions $k \in \{1,\dots, n\}\backslash i$. With this algorithmic implementation the computational cost is $O(n^2r^2(n+r))$. For most sequence design applications $n \sim r$ or $n\ll r$, so the complexity can be written as $O(n^2r^3)$ same as that of the goldstein criteria. The authors claim that this particular implementation is tailored towards protein design applications so that it favors $n \ll r$ calculations. This does not make sense since we are getting a $O(n^2r^3)$ complexity, wouldn't it better to have $O(n^3r^2)$ ? They say that they can change the loop structure for homology modeling applications where it $n \gg r$. 
+\\
+\\
+The following DEE cycle can be used prune the maximum. All steps included is called the Magic Bullet2 sDEE. Eliminating step 3 is singles sDEE. Eliminating steps 2 and 3 is the original Goldstein DEE. 
+\begin{enumerate}
+\item Simple Goldstein Singles DEE until no further elimination
+\item Simple split Singles DEE until no further elimination
+\item Magic Bullet2 split DEE once for each rotamer
+\item Alternate sequentially between the following applying one during each cycle
+\begin{enumerate}
+\item  Fast Goldstein doubles calculations to flag dead-ending pairs
+\item Goldstein doubles calculations to flag dead-ending pairs
+\item Unification of two residues with highest fraction of dead-ending pairs
+\end{enumerate}
+\item Return to 1
+\end{enumerate}
 
 
 \subsection{Bottom Line DEE}
-We present the Bottom line DEE technique is a theoretically interesting and is closely related to split DEE. It has the most eliminating power. However it is not possible to implement it in practice as it involves taking a minimum over energies over all rotamers of all neigbhors of the residue under consideration, a $O(r^n)$ calculation.  The main idea is that it is not necessary for the same rotamer $r_i^B$ to eliminate the rotamer $r_i^A$ at all conformations of the neighbours. It is merely sufficient for there to exist some candidate rotamer that is able to eliminate the rotamer $r_i^A$ under consideration. An illustration of the Bottom Line DEE is shown in Figure~\ref{fig:bottomDEE}.
+We present the Bottom line DEE technique as it is theoretically interesting and is closely related to split DEE. It has the most eliminating power. However it is not possible to implement it in practice as it involves taking a minimum over energies over all rotamers of all neigbhors of the residue under consideration, a $O(r^n)$ calculation.  The main idea is that it is not necessary for the same rotamer $r_i^B$ to eliminate the rotamer $r_i^A$ at all conformations of the neighbours. It is merely sufficient for there to exist some candidate rotamer that is able to eliminate the rotamer $r_i^A$ under consideration. An illustration of the Bottom Line DEE is shown in Figure~\ref{fig:bottomDEE}.
 
 \begin{figure}[h!]
     \centering
@@ -278,6 +316,8 @@ We present the Bottom line DEE technique is a theoretically interesting and is c
 
 \pagebreak
 
+\subsection*{Split DEE discussion}
+The authors in~\cite{Pierce2000} claim that this particular implementation is tailored towards protein design applications so that it favors $n \ll r$ calculations. This does not make sense since we are getting a $O(n^2r^3)$ complexity, wouldn't it better to have $O(n^3r^2)$ ?
 \section{Gordon Criteria}
 
 \section{DEE for Protein Design- Mayo}
@@ -323,9 +363,11 @@ Calculation  of $E_i(r_i)$ and $E_{ij}(r_i,r_j)$ can be quite expensive and is u
 
 First the method checks all rotamers for every amino acid and flags them. Then it checks rotamer pairs. This process iterates until no more rotamers or pairs can be eliminated. 
 
-In practice, the number of rotamers can be reduced significantly by applying some screening rules. Pre-screening rotamers that cause clashes and have energy more than 30kcal/mol with backbone and surrounding side chains can be eliminated. Desmet et.al~\ref{Desmet1992} report  that they were able to achieve 44\% and 6\% of the rotamers in their experiment were eliminated based on backbone and side chain clashes thresholding respectively. This meant a reduction of the search space from $2.7\times10^{76}$ to $6.2\times10^{53}$ rotamer conformations. This is quite a large saving. After six iterations of DEE the solution space was reduced to $10,800$. They could easily brute force this. 
+In practice, the number of rotamers can be reduced significantly by applying some screening rules. Pre-screening rotamers that cause clashes and have energy more than 30kcal/mol with backbone and surrounding side chains can be eliminated. Desmet et.al~\cite{Desmet1992} report  that they were able to achieve 44\% and 6\% of the rotamers in their experiment were eliminated based on backbone and side chain clashes thresholding respectively. This meant a reduction of the search space from $2.7\times10^{76}$ to $6.2\times10^{53}$ rotamer conformations. This is quite a large saving. After six iterations of DEE the solution space was reduced to $10,800$. They could easily brute force this. 
 
 One way to speed up calculations for DEE is to pre-cache the min and max value of the energy matrices into vectors while doing the energy calculations themselves. This can prevent repeated min and max calculations while using a little extra memory. Supposing there are $n$ residues and $r$ rotamers per residue then you should not need $O(n^2r)$ space by pre-caching $\min_X E_{ij}(r_i^A,r_j^X)$.
+
+Parallelization of DEE calculations using MPI on different clusters or even using GPUs can be explored. 
 
 \subsection{Space requirements}
 The space needed to store the energy values can be a limiting factor for large sequences. Let $N$ be the number of amino acids in the protein and $R$ be the number of rotamers per amino acid. Then we need $O(NR)$ space for unit energy values and $O(N^2R^2)$ for the pairwise energy values. 
@@ -345,8 +387,14 @@ Problems with DEE :
 \item What is the connection between local optimality of GMEC to graphical models and max product
 \end{itemize}
 
+\section{New Ideas}
 
-
+\begin{itemize}
+\item Is this is a better a scoring metric for magic bullet splitting in  \cite{Pierce2000} ? 
+\[
+\text{Score}_2 = \max_k \max_B \max_v \left( \left| E(r_i^Ar_k^v) - E(r_i^Br_k^v) \right| \right)
+\]
+\end{itemize}
 
 \pagebreak
 \newpage
@@ -361,8 +409,9 @@ Problems with DEE :
     \begin{tabular}{ | p{3cm} | p{3cm} | p{6cm} |}
     \hline
     \textbf{Paper} & \textbf{Dataset} & \bf{Summary} \\ \hline
-    Desmet1992~\cite{Desmet1992} & Insulin, haemocyanin & Compared agreement with pdb for Insulin. Predicted on blind study of haemocyanin \\ \hline
-    Goldstein1994~\cite{Golstein1994} & apo-myogloblin, lysosome, 7LZM, 5MBA& Showed parameter reduction, compute time. Randomly perturbed energy functions and compared to spin glasses. \\ \hline
+    Desmet1992, Original DEE~\cite{Desmet1992} & Insulin, haemocyanin & Compared agreement with pdb for Insulin. Predicted on blind study of haemocyanin \\ \hline
+    Goldstein1994, Original Goldstein~\cite{Goldstein1994} & apo-myogloblin, lysosome, 7LZM, 5MBA& Showed parameter reduction, compute time. Randomly perturbed energy functions and compared to spin glasses. \\ \hline
+Pierce2000, split DEE~\cite{Pierce2000} & Plastocyanin(2PCY), Gprotein(1PGA), Gprotein $\beta$-sheet& Showed parameter reduction,time using Goldstein, sDEE, MB2 sDEE for each test case. Core easier to prune than surface. \\ \hline
     Tuesday & 9C & Cloudy with rain, across many northern regions. Clear spells
     across most of Scotland and Northern Ireland,
     but rain reaching the far northwest. \\ 
