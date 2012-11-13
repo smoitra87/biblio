@@ -334,14 +334,14 @@ For $s=2$ splits they call the split as $s=2_{mb}$ and this has a $O(r^4n)$ cost
 					\State $X \gets X + Y_{jt}$
 				\EndFor
 				\For{each partition $v$ at $k$}
-					\If{$X+\left[E_{ik}(r_i^r,r_t^v) - E_{ik}(r_i^t,r_k^v)\right] > 0$}
+					\If{$X+\left[E_{ik}(r_i^r,r_k^v) - E_{ik}(r_i^t,r_k^v)\right] > 0$}
 						\State $elim_v \gets true$						
 					\EndIf
 				\EndFor
-				\If{$elim_v == true \quad \forall v$ at $k$} 
-					\State eliminate $r_i^r$ and break
-				\EndIf
 			\EndFor
+			\If{$elim_v == true \quad \forall v$ at $k$} 
+				\State eliminate $r_i^r$ and break
+			\EndIf
 		\EndFor
 	\EndFor
 \EndFor
@@ -385,42 +385,43 @@ We present the Bottom line DEE technique as it is theoretically interesting and 
 
 \subsection*{Split DEE discussion}
 The authors in~\cite{Pierce2000} claim that this particular implementation is tailored towards protein design applications so that it favors $n \ll r$ calculations. This does not make sense since we are getting a $O(n^2r^3)$ complexity, wouldn't it better to have $O(n^3r^2)$ ?
-%\section{Gordon Criteria}
-%
-%\section{DEE for Protein Design- Mayo}
-%
-%\section{Post DEE searches}
-%\subsection{DEE/A*}
-%
-%\subsection{Branch and Terminate}
-%
-%\subsection{K*??} 
-%
-%\section{Newer Methods}
-%
-%\subsection{DEE for Multistate protein design}
-%A subproblem in the 
-%
-%\subsection{DEE for Flexible backbone}
-%
-%\subsection{minDEE/K*}
-%
-%\subsection{restricted DEE - Lilien}
-%
-%\subsection{iminDEE - Continuous rotamers}
-%
-%\subsection{Backrub}
-%
-%\subsection{BroMAP}
-%
-%\subsection{DEEPer}
-%
-%\subsection{Ensemble K*}
-%
-%\section{Connections}
-%\subsection{Graphical models and Max Product BP}
-%
-%\subsection{Dynamic Programming}
+
+\section{Gordon Criteria}
+
+\section{DEE for Protein Design- Mayo}
+
+\section{Post DEE searches}
+\subsection{DEE/A*}
+
+\subsection{Branch and Terminate}
+
+\subsection{K*??} 
+
+\section{Newer Methods}
+
+\subsection{DEE for Multistate protein design}
+A subproblem in the 
+
+\subsection{DEE for Flexible backbone}
+
+\subsection{minDEE/K*}
+
+\subsection{restricted DEE - Lilien}
+
+\subsection{iminDEE - Continuous rotamers}
+
+\subsection{Backrub}
+
+\subsection{BroMAP}
+
+\subsection{DEEPer}
+
+\subsection{Ensemble K*}
+
+\section{Connections}
+\subsection{Graphical models and Max Product BP}
+
+\subsection{Dynamic Programming}
 
 
 \section{Implementation}
@@ -461,66 +462,6 @@ Problems with DEE :
 \]
 \end{itemize}
 
-
-
-%\begin{algorithmic}
-%\If {$i\geq maxval$}
-%    \State $i\gets 0$
-%\Else
-%    \If {$i+k\leq maxval$}
-%        \State $i\gets i+k$
-%    \EndIf
-%\EndIf
-%\end{algorithmic}
-%
-%\begin{algorithm}
-%\caption{The Bellman-Kalaba algorithm}
-%\begin{algorithmic}[1]
-%\Procedure {BellmanKalaba}{$G$, $u$, $l$, $p$}
-%\ForAll {$v \in V(G)$}
-%\State $l(v) \leftarrow \infty$
-%\EndFor
-%\State $l(u) \leftarrow 0$
-%\Repeat
-%\For {$i \leftarrow 1, n$}
-%\State $min \leftarrow l(v_i)$
-%\For {$j \leftarrow 1, n$}
-%\If {$min > e(v_i, v_j) + l(v_j)$}
-%\State $min \leftarrow e(v_i, v_j) + l(v_j)$
-%\State $p(i) \leftarrow v_j$
-%\EndIf
-%\EndFor
-%\State $l’(i) \leftarrow min$
-%\EndFor
-%\State $changed \leftarrow l \not= l’$
-%\State $l \leftarrow l’$
-%\Until{$\neg changed$}
-%\EndProcedure
-%\Statex
-%\Procedure {FindPathBK}{$v$, $u$, $p$}
-%\If {$v = u$}
-%\State \textbf{Write} $v$
-%\Else
-%\State $w \leftarrow v$
-%\While {$w \not= u$}
-%\State \textbf{Write} $w$
-%\State $w \leftarrow p(w)$
-%\EndWhile
-%\EndIf
-%\EndProcedure
-%\end{algorithmic}
-%\end{algorithm}
-
-%\definecolor{bg}{rgb}{0.95,0.95,0.90}
-%\begin{minted}[bgcolor=bg,linenos=true,mathescape]{python}
-%class A(object) : 
-%	""" This is class A """
-%	# This calculates $\sum_{j<i} \min_X \left[ E_{ij}(r_i^A,r_j^X) \right]$
-%	def __init__(self) : 
-%		a = "An object"
-%	def print_a(self) : 
-%		print self.a
-%\end{minted}
 
 
 
