@@ -387,7 +387,7 @@ We present the Bottom line DEE technique as it is theoretically interesting and 
 The authors in~\cite{Pierce2000} claim that this particular implementation is tailored towards protein design applications so that it favors $n \ll r$ calculations. This does not make sense since we are getting a $O(n^2r^3)$ complexity, wouldn't it better to have $O(n^3r^2)$ ?
 
 
-\section{Other DEE related}
+\section{Other DEE}
 This section covers a number of other related DEE work that came about contemporarily and after the initial DEE work. Some of them further develop the core DEE criterion and some others make novel modifications that make the algorithm applicable to novel applications. 
 
 
@@ -403,9 +403,47 @@ Their sequence redesign problem had 28 residues. They restricted the state space
 Their DEE implementation on this problem took 90 CPU hours to compute. They called their GMEC seq FSD1. They claimed that FSD1 was quite novel as it did not match any other sequences from BLAST searches. Random MCMC searches showed a dense search space around FSD1, implying that some of the sequences had low energy. 
 Finally, they were able to demonstrate the efficacy of FSD1 conclusively by doing NMR and showing that the FSD1 structure was in close agreement with Zif268.
 
-\subsection{Gordon Criteria}
+\subsection{HERO - Gordon}
+This method combines Dominance, Bounding and stochastic search for DEE elimination~\cite{Gordon2003}. It is exact but not deterministic. Dominance relations are those found in traditional DEE methods such as Original, Goldstein and splitDEE. Here rotamers compete against each other, such that one can eliminate other. Whereas, bounding expressions are more common in $A*$ searches~\cite{Leach1998}. 
+They can prune subset of the search space by finding a lower bound for the subset of sequences. Comparing this lower bound with the energy of a reference sequence can eliminate the subset. 
+\[
+	E_{bound}(\mathrm{subset}) > E_{total}(\mathrm{reference})
+\]
 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{pics/hero.pdf}
+    \caption{Rotamer $i_r$ cannot be eliminated by either of the rotamers $i_{t1}$ or $i_{t2}$ since they are greater than $i_r$ for some conformation. However $i_{t1}$ can eliminate $i_r$ in $k_{v1}$. Figure reproduced from~\cite{Gordon2003}}.
+    \label{fig:ero}
+\end{figure}
 
+They introduce two different criteria (1) The split flags criteria (2) Bounding expressions. The split flags criteria, reuses computations done during split DEE to flag and mark regions of the rotamer space as dead ending given some other rotamers being fixed. These flagged subsets of the rotamer space can the be removed from bounding expressions calculations. See Figure~\ref{fig:hero} for an illustration of split flagging. The complexity of split flagging is absorbed into Split DEE or Goldstein DEE. In particular the additional overhead is $O(r^2)$ for Goldstein pairs, $O(n)$ for split flags $(s=1,2)$. 
+\\
+\\
+Bounding Expressions attempt to find a lower bound for a subset of the sequence space. The subset is defined by keeping a rotamer or a set of rotamers fixed to some value. The lower bound does not need to actually correspond to a member of the subset but is merely a lower bound. They define the lower bound by grouping Unit energies into pairwise energies, like so : 
+\[
+	E'_{ij}(r_i^r,r_j^u) = \frac{E_i(r_i^r)+E_j(r_j^u)}{2(n-1)} + \frac{E_{ij}(r_i^r,r_j^u)}{2}
+\]
+They then freeze the rotamers of certain positions and define it by the constrained set $C$. The other residues are referred to as $V$. The Lower bound of the frozen subset is shown in eq.~\ref{eq:hero}
+
+\begin{equation}
+\label{eq:hero}
+\begin{split}
+E_{bound} &= \left( \sum_{i\in C} \sum_{j\in C; j\neq i}E'_i(r_i^r,r_j^u) \right) \\ &+ 
+		\sum_{k\in V}\min_l \left( 2\sum_{i \in C}E'_{ik}(r_i^r,r_k^l) + \sum_{m\in V; m\neq k}\min_n E_{km}(r_k^l,r_m^n) \right) 
+\end{split}
+\end{equation}
+
+Calculating the bounding value, can be hastened by storing the flagged subsets from the previous split flag results. But there is a memory, cost here for storing the flagged subsets, but not much as it is only a bit vector. To put the bounding value calculated in eq.~\ref{eq:hero} to use, one must find a reference sequence that has a lower value. 
+This is done by a Monte Carlo search on the sequence space. So far everything has been deterministic, but this step introduces a random element. 
+As always, DEE works best when a number of DEE criteria are combined. So there needs to be schedule/ recipe that is applied to prune the search space. 
+\\
+\\
+The authors mention that DEE tends to work well when the number of rotamers per amino acid is small. This becomes a problem when doing protein design, since the rotamer space increases dramatically. 
+The authors also mention that  core $<$ boundary $<$ surface in order of desiging difficulty. This is because the core is closely packed and has a number of closely interacting strong forces that limit the positions that rotamers can take. 
+The surface on the other hand, has a lot of freedom in adopting a number of different positions. 
+
+\pagebreak
 
 \subsection{DEE/A*}
 
@@ -495,9 +533,17 @@ Problems with DEE :
     \begin{tabular}{ | p{3cm} | p{3cm} | p{6cm} |}
     \hline
     \textbf{Paper} & \textbf{Dataset} & \bf{Summary} \\ \hline
+
     Desmet1992, Original DEE~\cite{Desmet1992} & Insulin, haemocyanin & Compared agreement with pdb for Insulin. Predicted on blind study of haemocyanin \\ \hline
+
     Goldstein1994, Original Goldstein~\cite{Goldstein1994} & apo-myogloblin, lysosome, 7LZM, 5MBA& Showed parameter reduction, compute time. Randomly perturbed energy functions and compared to spin glasses. \\ \hline
+
 Pierce2000, split DEE~\cite{Pierce2000} & Plastocyanin(2PCY), Gprotein(1PGA), Gprotein $\beta$-sheet& Showed parameter reduction,time using Goldstein, sDEE, MB2 sDEE for each test case. Core easier to prune than surface. \\ \hline
+
+Dahiyat1997, Prot Des~\cite{Dahiyat1997} & $\beta\beta\alpha domain of Zif268$ & Found optimal sequence. Showed it is unique. Showed NMR structure agreement \\ \hline
+
+Gordon2002, HERO~\cite{Gordon2003} & Plastocyanin(2PCY), Gprotein, 48G7 FAB catalytic antibody & Found optimal sequence. Showed it is unique. Showed NMR structure agreement \\ \hline
+
     Tuesday & 9C & Cloudy with rain, across many northern regions. Clear spells
     across most of Scotland and Northern Ireland,
     but rain reaching the far northwest. \\ 
